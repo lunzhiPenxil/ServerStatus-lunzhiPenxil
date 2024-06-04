@@ -21,6 +21,7 @@ import json
 import subprocess
 import collections
 import platform
+import distro
 
 def get_uptime():
 	f = open('/proc/uptime', 'r')
@@ -36,7 +37,7 @@ def get_memory():
 	for line in open('/proc/meminfo'):
 		match = re_parser.match(line)
 		if not match:
-			continue;
+			continue
 		key, value = match.groups(['key', 'value'])
 		result[key] = int(value)
 
@@ -56,7 +57,7 @@ def get_hdd():
 	return int(size), int(used)
 
 def get_load():
-	system = platform.linux_distribution()
+	system = (distro.name(), distro.version(), '')
 	if system[0][:6] == "CentOS":
 		if system[1][0] == "6":
 			tmp_load = os.popen("netstat -anp |grep ESTABLISHED |grep tcp |grep '::ffff:' |awk '{print $5}' |awk -F ':' '{print $4}' |sort -u |grep -E -o '([0-9]{1,3}[\.]){3}[0-9]{1,3}' |wc -l").read()
@@ -67,6 +68,8 @@ def get_load():
 	
 	return float(tmp_load)
 	#return os.getloadavg()[0]
+
+file = open
 
 def get_time():
 	stat_file = file("/proc/stat", "r")
@@ -155,10 +158,10 @@ if __name__ == '__main__':
 			print("Connecting...")
 			s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 			s.connect((SERVER, PORT))
-			data = s.recv(1024)
+			data = s.recv(1024).decode("utf-8")
 			if data.find("Authentication required") > -1:
-				s.send(USER + ':' + PASSWORD + '\n')
-				data = s.recv(1024)
+				s.send((USER + ':' + PASSWORD + '\n').encode("utf-8"))
+				data = s.recv(1024).decode("utf-8")
 				if data.find("Authentication successful") < 0:
 					print(data)
 					raise socket.error
@@ -167,7 +170,7 @@ if __name__ == '__main__':
 				raise socket.error
 
 			print(data)
-			data = s.recv(1024)
+			data = s.recv(1024).decode("utf-8")
 			print(data)
 
 			timer = 0
@@ -212,7 +215,7 @@ if __name__ == '__main__':
 				array['network_in'] = NET_IN
 				array['network_out'] = NET_OUT
 
-				s.send("update " + json.dumps(array) + "\n")
+				s.send(("update " + json.dumps(array) + "\n").encode('utf-8'))
 		except KeyboardInterrupt:
 			raise
 		except socket.error:
